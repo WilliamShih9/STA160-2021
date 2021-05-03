@@ -507,13 +507,37 @@ df_test.drop('geohash', axis=1, inplace= True)
 
 # It turns out the y-variable could benefit from a log transformation, depending on what model we are using as the distribution of prices is close to a lognormal distribution.
 
-# In[29]:
+# In[195]:
 
 
-#one, two, three = stats.boxcox(y_train, alpha = 0.95)
-# print(three)
-#y_train = np.log(y_train)
-#y_test = np.log(y_test)
+one, two, three = stats.boxcox(y_train, alpha = 0.95)
+print(one, two, three)
+
+
+# In[207]:
+
+
+y_series = pd.Series(y)
+plt.hist(y_series, bins = 20, histtype = 'bar', ec = 'black')
+plt.title("Price Histogram")
+plt.xlabel("Price ($10-$1000)")
+plt.ylabel("Count")
+plt.savefig("LinearPriceHist.png", dpi = 400)
+plt.show()
+
+
+# In[206]:
+
+
+y_series = pd.Series(y)
+logbins = np.geomspace(y_series.min(), y_series.max(), 20)
+plt.hist(y_series, bins = logbins, histtype = 'bar', ec ='black')
+plt.xscale('log')
+plt.title("Log of Price Histogram")
+plt.xlabel("Price in Log Scale ($10-$1000)")
+plt.ylabel("Count")
+plt.savefig("LogPriceHist.png", dpi = 400)
+plt.show()
 
 
 # In[30]:
