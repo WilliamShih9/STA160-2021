@@ -1,0 +1,134 @@
+---
+title: "midterm-projv2"
+author: "Yudong Wang"
+date: "4/18/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Extra Analysis
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(geoR)
+library(car)
+# read data
+mydata = read_csv("Airbnb_NYC_2019.csv")
+mydata = dplyr::select(mydata, -c(id, host_id, last_review))
+mydata$reviews_per_month = replace_na(mydata$reviews_per_month, 0)
+filtered = filter(mydata, price > 0 & price <= 3000 & 
+                    minimum_nights <= 60 & reviews_per_month <= 15)
+data1 = filtered
+boxcoxfit(filtered$number_of_reviews, lambda2 = TRUE)
+boxcoxfit(filtered$reviews_per_month, lambda2 = TRUE)
+boxcoxfit(filtered$price, lambda2 = TRUE)
+boxcoxfit(filtered$minimum_nights, lambda2 = TRUE)
+boxcoxfit(filtered$calculated_host_listings_count, lambda2 = TRUE)
+
+test_filt = dplyr::select(filtered, -c(name, host_name, neighbourhood))
+other_filt = test_filt
+other_filt = other_filt %>%
+  mutate(room_type = 
+           dplyr::recode(room_type, 'Entire home/apt' = 3, 
+                         'Private room' = 2,
+                         'Shared room' = 1))
+summary(lm(log(price) ~ ., data = other_filt))
+summary(lm(log(price) ~ ., data = test_filt))
+summary(glm(price ~ ., data = other_filt, family = gaussian("log")))
+summary(glm(price ~ ., data = test_filt, family = gaussian("log")))
+```
+
+
+# Begin Analysis
+
+```{r}
+data1 = data1 %>%
+  mutate(price_range = 
+           cut(price, breaks = c(0,50,100,150,200,99999), 
+               labels = c("0-50","50-100","100-150","150-200","200 up")))
+```
+
+```{r}
+ggplot(data1, aes(price_range)) + geom_bar(aes(fill = room_type), position = "dodge")
+# room type and their avg price
+data1 %>% 
+  group_by(room_type) %>% 
+  summarise(u = mean(price))
+```
+
+### proof of the entire room is more expensive. (graph + avg price)
+
+
+```{r}
+# histogram of city and room type
+ggplot(data1, aes(neighbourhood_group)) + geom_bar(aes(fill = room_type), position = "dodge")
+
+```
+
+### Entire home and private room much more popular than shared room. People want privacy. Most boroughts have more private rooms than entire room, but not in Manhattan. Reasonable because Manhattan is the richest boroughs in NYC
+
+### https://nypost.com/2019/12/12/gdp-in-nycs-outer-boroughs-leads-state-in-economic-output/
+
+
+```{r}
+ggplot(data1, aes(neighbourhood_group)) + geom_bar(aes(fill = price_range), position = "fill")
+```
+
+### Combine previous 2 graph's information, get distribution
+
+
+
+# what affects price?
+
+```{r}
+# get short term rental data
+# minimum nights <= 31 (one month)
+mn31 = data1 %>% 
+  filter(minimum_nights <= 31)
+# plot against price and room type
+ggplot(mn31, aes(minimum_nights, price)) + geom_smooth(aes(color = room_type))
+
+```
+
+### Private and shared rooms' prices drop as minimum night increases. This fits economic rule (like risk premium?), the longer stay, the lower per night price.
+
+### Entire room's price decrease first, then start increasing at mn=20. Maybe longer stay means the room is better? I'm not sure.
+
+```{r}
+a50 = data1 %>% 
+  filter(availability_365 <= 50 & minimum_nights <= 31)
+ggplot(mn31, aes(minimum_nights, availability_365)) + geom_smooth(aes(col = price_range))
+```
+
+### Overall, availability would increase as minimum nights increase. This fits our expectation because people who rent Airbnb prefer stay short in a room (people can just rent a house/apartment if they have to stay long). Or people tend to rent Airbnb during vacation, which is around a week or two.
+
+
+
+
+### Just some sketches, you can ignore it.
+
+```{r}
+a365 = data1 %>% 
+  filter(availability_365 == 365)
+hist(a365$price)
+```
+
+
+
+```{r}
+data1 %>% 
+  group_by(neighbourhood_group, price_range) %>% 
+  summarize(u = mean(availability_365))
+data1 %>% 
+  filter(availability_365 <= 50) %>% 
+  group_by(neighbourhood_group, price_range) %>% 
+  count()
+
+
+```
+
