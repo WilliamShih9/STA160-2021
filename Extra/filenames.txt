@@ -1,0 +1,128 @@
+.gitignore
+.Rhistory
+AbsoluteErrorTestModelDataTopFive.csv
+Actual vs Prediction for k-Nearest Neighbors (Linear)_actual.png
+Actual vs Prediction for k-Nearest Neighbors (Log)_actual.png
+Actual vs Prediction for k-Nearest Neighbors (Sqrt)_actual.png
+Actual vs Prediction for k-Nearest Neighbors_actual.png
+Actual vs Prediction for Lasso Linear Regression (Linear)_actual.png
+Actual vs Prediction for Lasso Linear Regression (Log)_actual.png
+Actual vs Prediction for Lasso Linear Regression (Sqrt)_actual.png
+Actual vs Prediction for Lasso Linear Regression_actual.png
+Actual vs Prediction for Random Forest (Exp)_actual.png
+Actual vs Prediction for Random Forest (Linear)_actual.png
+Actual vs Prediction for Random Forest (Log)_actual.png
+Actual vs Prediction for Random Forest_actual.png
+Actual vs Prediction for Support Vector Machine (Linear,Gaussian Kernel)_actual.png
+Actual vs Prediction for Support Vector Machine (Linear,Linear Kernel)_actual.png
+Actual vs Prediction for Support Vector Machine (Log,Gaussian Kernel)_actual.png
+Actual vs Prediction for Support Vector Machine (Sqrt,Gaussian Kernel)_actual.png
+Actual vs Prediction for Support Vector Machine_actual.png
+Actual vs Residuals for k-Nearest Neigbor (Sqrt)_diff.png
+Actual vs Residuals for k-Nearest Neigbors (Log)_diff.png
+Actual vs Residuals for k-Nearest Neighbors (Linear)_diff.png
+Actual vs Residuals for k-Nearest Neighbors_diff.png
+Actual vs Residuals for Lasso Linear Regression (Linear)_diff.png
+Actual vs Residuals for Lasso Linear Regression (Log)_diff.png
+Actual vs Residuals for Lasso Linear Regression (Sqrt)_diff.png
+Actual vs Residuals for Lasso Linear Regression_diff.png
+Actual vs Residuals for Random Forest (Linear)_diff.png
+Actual vs Residuals for Random Forest (Log)_diff.png
+Actual vs Residuals for Random Forest (Sqrt)_diff.png
+Actual vs Residuals for Random Forest_diff.png
+Actual vs Residuals for Support Vector Machine (Linear)_diff.png
+Actual vs Residuals for Support Vector Machine (Linear,Gaussian Kernel)_diff.png
+Actual vs Residuals for Support Vector Machine (Linear,Linear Kernel)_diff.png
+Actual vs Residuals for Support Vector Machine (Log)_diff.png
+Actual vs Residuals for Support Vector Machine (Log,Gaussian Kernel)_diff.png
+Actual vs Residuals for Support Vector Machine (Sqrt)_diff.png
+Actual vs Residuals for Support Vector Machine (Sqrt,Gaussian Kernel)_diff.png
+Actual vs Residuals for Support Vector Machine_diff.png
+Airbnb_data_preprocessing-model-training-V3.ipynb
+Airbnb_data_visualization.ipynb
+AllData.csv
+Boxplot for Price Group (10-50).png
+Boxplot for Price Group (105-130).png
+Boxplot for Price Group (130-155).png
+Boxplot for Price Group (155-199).png
+Boxplot for Price Group (199-260).png
+Boxplot for Price Group (260-1000).png
+Boxplot for Price Group (50-60).png
+Boxplot for Price Group (60-75).png
+Boxplot for Price Group (75-90).png
+Boxplot for Price Group (90-105).png
+Correlation.png
+Density.png
+Feature importance for kNN (linear).png
+Feature importance for kNN (log).png
+Feature importance for kNN (sqrt).png
+Feature importance for kNN.png
+Feature importance for Lasso (Linear).png
+Feature importance for Lasso (Log).png
+Feature importance for Lasso (Sqrt).png
+Feature importance for Lasso.png
+Feature importance for OLS (Linear).png
+Feature importance for OLS (Log).png
+Feature importance for OLS (Sqrt).png
+Feature importance for Random Forest (Exp).png
+Feature importance for Random Forest (Linear).png
+Feature importance for Random Forest (Log).png
+Feature importance for Random Forest.png
+Feature importance for SVM.png
+filenames.txt
+HostListingsMinimumNights3D.png
+LinearPriceHist.png
+Linearscorealpha.png
+LogPriceHist.png
+Logscorealpha.png
+Map.png
+Median Error by 12 Groups Price.png
+Median Error by Neighborhood.png
+Median Error by Price Quartile and Room Type.png
+Median Error by Room Type.png
+Metrics.png
+MetricsTable.png
+midterm-proj.Rmd
+midterm-projv2.pdf
+midterm-projv2.Rmd
+Minimum Nights for k-Nearest Neighbors.png
+Minimum Nights for kNN.png
+Minimum Nights for LASSO.png
+Minimum Nights for Random Forest.png
+Minimum Nights for SVM.png
+Neighborhood Group for k-Nearest Neighbors.png
+Neighborhood Group for kNN.png
+Neighborhood Group for LASSO.png
+Neighborhood Group for Random Forest.png
+Neighborhood Group for SVM.png
+outlier.png
+Price Category for k-Nearest Neighbors (Linear).png
+Price Category for k-Nearest Neighbors (Log).png
+Price Category for k-Nearest Neighbors (Sqrt).png
+Price Category for k-Nearest Neighbors.png
+Price Category for Lasso Linear Regression (Linear).png
+Price Category for Lasso Linear Regression (Log).png
+Price Category for Lasso Linear Regression (Sqrt).png
+Price Category for Lasso Linear Regression.png
+Price Category for Random Forest (Linear).png
+Price Category for Random Forest (Log).png
+Price Category for Random Forest (Sqrt).png
+Price Category for Random Forest.png
+Price Category for Support Vector Machine (Linear).png
+Price Category for Support Vector Machine (Linear,Gaussian Kernel).png
+Price Category for Support Vector Machine (Linear,Linear Kernel).png
+Price Category for Support Vector Machine (Log).png
+Price Category for Support Vector Machine (Log,Gaussian Kernel).png
+Price Category for Support Vector Machine (Sqrt).png
+Price Category for Support Vector Machine (Sqrt,Gaussian Kernel).png
+Price Category for Support Vector Machine.png
+Price Decile for kNN.png
+Price Decile for LASSO.png
+Price Decile for Random Forest.png
+Price Decile for SVM.png
+README.md
+scorealpha.png
+Sqrtscorealpha.png
+STA160-2021.Rproj
+TestData.csv
+TestModelData.csv

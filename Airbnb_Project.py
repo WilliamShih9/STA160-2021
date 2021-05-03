@@ -457,7 +457,7 @@ y = df_omit['price'].tolist()
 
 # Split train data and test data for this one, with 67% in the training set and 33% in the testing set.
 
-# In[25]:
+# In[287]:
 
 
 #train test split 
@@ -468,7 +468,7 @@ print(len(y_train))
 print(len(y_test))
 
 
-# In[26]:
+# In[288]:
 
 
 #create train and test dataframe for target encoding later
@@ -514,7 +514,7 @@ one, two, three = stats.boxcox(y_train, alpha = 0.95)
 print(one, two, three)
 
 
-# In[207]:
+# In[210]:
 
 
 y_series = pd.Series(y)
@@ -526,7 +526,7 @@ plt.savefig("LinearPriceHist.png", dpi = 400)
 plt.show()
 
 
-# In[206]:
+# In[211]:
 
 
 y_series = pd.Series(y)
@@ -896,7 +896,7 @@ visualize_regression_actual(scaled_test_y, np.exp(lasso_pred_log), 'Lasso Linear
 visualize_regression_actual(scaled_test_y, np.square(lasso_pred_sqrt), 'Lasso Linear Regression (Sqrt)')
 
 
-# In[50]:
+# In[253]:
 
 
 # get important features from linear regression
@@ -905,7 +905,7 @@ def get_importance_lasso(lasso_f, scaled_train, name):
     names_lr_best = scaled_train.loc[:, scaled_train.columns != 'price'].columns.tolist()
     df_importantce_lr_best = pd.DataFrame({'Feature':names_lr_best, 'Importance':importance_lr_best})
     # plot feature importance
-    rank_importance_lr_best = df_importantce_lr_best.sort_values('Importance', ascending=False)
+    rank_importance_lr_best = df_importantce_lr_best.sort_values('Importance', ascending=True)
     plot_feature_importance(rank_importance_lr_best,15, 'steelblue', 0.8, 10, 4, name)
 get_importance_lasso(lasso_f, scaled_train, 'Feature importance for Lasso (Linear)')
 get_importance_lasso(lasso_f_log, scaled_train, 'Feature importance for Lasso (Log)')
@@ -944,7 +944,7 @@ eval_grid[5,:] = evaluate(scaled_test_y, np.exp(linear_pred_log))
 eval_grid[6,:] = evaluate(scaled_test_y, np.square(linear_pred_sqrt))
 
 
-# In[180]:
+# In[209]:
 
 
 get_importance_lasso(linear_f, scaled_train, 'Feature importance for OLS (Linear)')
@@ -1042,7 +1042,7 @@ visualize_regression_actual(scaled_test_y, np.exp(knn_pred_log), 'k-Nearest Neig
 visualize_regression_actual(scaled_test_y, np.square(knn_pred_sqrt), 'k-Nearest Neighbors (Sqrt)')
 
 
-# In[60]:
+# In[258]:
 
 
 # get important features from knn
@@ -1053,11 +1053,11 @@ def get_importance_knn(best_KNN_model, scaled_test_X, scaled_test_y, scaled_trai
     names_knn_best = scaled_train.loc[:, scaled_train.columns != 'price'].columns.tolist()
     df_importantce_knn_best = pd.DataFrame({'Feature':names_knn_best, 'Importance':importance_knn_best})
     # plot feature importance
-    rank_importance_knn_best = df_importantce_knn_best.sort_values('Importance', ascending=False)
+    rank_importance_knn_best = df_importantce_knn_best.sort_values('Importance', ascending=True)
     plot_feature_importance(rank_importance_knn_best,15, 'steelblue', 0.8, 10, 4, name)
-#get_importance_knn(best_KNN_model, scaled_test_X,scaled_test_y,scaled_train,  'Feature importance for kNN (linear)')
-#get_importance_knn(best_KNN_model_log, scaled_test_X,np.log(scaled_test_y),scaled_train, 'Feature importance for kNN (log)')
-#get_importance_knn(best_KNN_model_sqrt, scaled_test_X,np.sqrt(scaled_test_y),scaled_train, 'Feature importance for kNN (sqrt)')
+get_importance_knn(best_KNN_model, scaled_test_X,scaled_test_y,scaled_train,  'Feature importance for kNN (linear)')
+get_importance_knn(best_KNN_model_log, scaled_test_X,np.log(scaled_test_y),scaled_train, 'Feature importance for kNN (log)')
+get_importance_knn(best_KNN_model_sqrt, scaled_test_X,np.sqrt(scaled_test_y),scaled_train, 'Feature importance for kNN (sqrt)')
 
 
 # # 3.4 SVM
@@ -1144,7 +1144,7 @@ visualize_regression_actual(scaled_test_y, np.exp(svm_pred_log), 'Support Vector
 visualize_regression_actual(scaled_test_y, np.square(svm_pred_sqrt), 'Support Vector Machine (Sqrt,Gaussian Kernel)')
 
 
-# In[68]:
+# In[256]:
 
 
 # get important features from SVM
@@ -1153,7 +1153,7 @@ def get_importance_SVM(best_SVM_model, scaled_train, name):
     names_svm_best = scaled_train.loc[:, scaled_train.columns != 'price'].columns.tolist()
     df_importantce_svm_best = pd.DataFrame({'Feature':names_svm_best, 'Importance':importance_svm_best})
     # plot feature importance
-    rank_importance_svm_best = df_importantce_svm_best.sort_values('Importance', ascending=False)
+    rank_importance_svm_best = df_importantce_svm_best.sort_values('Importance', ascending=True)
     plot_feature_importance(rank_importance_svm_best,15, 'steelblue', 0.8, 10, 4, 'Feature importance for SVM')
 
 get_importance_SVM(best_SVM_linmodel, scaled_train, 'Feature importance for SVM (Linear,Linear Kernel)')
@@ -1240,7 +1240,7 @@ visualize_regression_actual(scaled_test_y, np.exp(rf_pred_log), 'Random Forest (
 visualize_regression_actual(scaled_test_y, np.square(rf_pred_sqrt), 'Random Forest (Exp)')
 
 
-# In[143]:
+# In[255]:
 
 
 def get_importance_rf(best_RF_model, scaled_train, name):
@@ -1248,7 +1248,7 @@ def get_importance_rf(best_RF_model, scaled_train, name):
     names_rf_best = scaled_train.loc[:, scaled_train.columns != 'price'].columns.tolist()
     df_importantce_rf_best = pd.DataFrame({'Feature':names_rf_best, 'Importance':importance_rf_best})
     # plot feature importance
-    rank_importance_rf_best = df_importantce_rf_best.sort_values('Importance', ascending=False)
+    rank_importance_rf_best = df_importantce_rf_best.sort_values('Importance', ascending=True)
 
     plot_feature_importance(rank_importance_rf_best,15, 'steelblue', 0.8, 10, 4, name)
 get_importance_rf(best_RF_model, scaled_train, 'Feature importance for Random Forest (Linear)')
@@ -1256,7 +1256,7 @@ get_importance_rf(best_RF_model_log, scaled_train, 'Feature importance for Rando
 get_importance_rf(best_RF_model_sqrt, scaled_train, 'Feature importance for Random Forest (Exp)')
 
 
-# # Saving the Data
+# # 4. Saving the Data and Analysis by Group
 
 # In[181]:
 
@@ -1265,12 +1265,6 @@ df = pd.DataFrame(eval_grid, columns = ['MAPE', 'MAE', 'MAD_ratio', 'r2_score', 
                   index = ['Null','OLS (Linear)','OLS (Log)','OLS (Sqrt)','LASSO (Linear)', 'LASSO (Log)', 'LASSO (Sqrt)', 'kNN (Linear)', 'kNN (Log)', 'kNN (Sqrt)', 'SVM (Linear Kernel)','SVM (Linear/Gaussian)', 'SVM (Log/Gaussian)', 'SVM (Sqrt/Gaussian)',
         'Random Forest (Linear)', 'Random Forest (Log)', 'Random Forest (Sqrt)'])
 df.to_csv("Metrics.csv", sep = ",")
-
-
-# In[158]:
-
-
-df.style.highlight_min(color = 'green', axis = 0).format("{:.3f}")
 
 
 # In[177]:
@@ -1300,12 +1294,76 @@ all_data.to_csv("TestModelData.csv", sep = ',')
 # In[178]:
 
 
+columns = list(all_data)
+
 absolute_error_data = pd.DataFrame({'Actual':all_data['Actual'],
+                                'Null':abs(all_data['Actual']) - all_data['']
                                'OLS(Log)':abs(all_data['Actual'] - all_data['OLS(Log)']),
                                'LASSO(Log)':abs(all_data['Actual'] - all_data['LASSO(Log)']),
                               'kNN(Log)':abs(all_data['Actual'] - all_data['kNN(Log)']),
                              'SVM(Linear Kernel)':abs(all_data['Actual'] - all_data['SVM(Linear Kernel)']),
                               'RandomForest(Log)':abs(all_data['Actual'] - all_data['RandomForest(Log)'])})
+for i in range()
 absolute_error_data.to_csv("AbsoluteErrorTestModelDataTopFive.csv", sep = ",")
 df_test_keep.to_csv("TestData.csv", sep = ",")
+
+
+# In[284]:
+
+
+absolute_error_data = all_data.copy()
+for column in all_data:
+    absolute_error_data[column] = abs(all_data['Actual'] - all_data[column])
+absolute_error_data = absolute_error_data.drop(columns = ['Actual'])
+absolute_error_data['Quantile'] = pd.qcut(all_data['Actual'], 12)
+
+
+# In[285]:
+
+
+absolute_error_data['Quantile'] = pd.qcut(all_data['Actual'], 12)
+frame = absolute_error_data.groupby(["Quantile"]).median().T
+error_by_decile = frame.style.format('{:.2f}').background_gradient()
+error_by_decile
+
+
+# In[292]:
+
+
+neigh = df_test_keep.iloc[:,5:10]
+neigh.columns = ['Bronx','Brooklyn','Manhattan','Queens','Staten Island']
+absolute_error_data['Neighborhood'] = pd.Series(neigh.columns[np.where(neigh != 0)[1]])
+frame = absolute_error_data.groupby(["Neighborhood"]).median().T
+error_by_neighborhood = frame.style.format('{:.2f}').background_gradient()
+error_by_neighborhood
+
+
+# In[297]:
+
+
+neigh = df_test_keep.iloc[:,10:13]
+neigh.columns = ['Entire home/apt', 'Private room', 'Shared room']
+absolute_error_data['RoomType'] = pd.Series(neigh.columns[np.where(neigh != 0)[1]])
+frame = absolute_error_data.groupby(["RoomType"]).median().T
+error_by_roomtype = frame.style.format('{:.2f}').background_gradient()
+error_by_roomtype
+
+
+# In[303]:
+
+
+absolute_error_data['Quartile'] =  pd.qcut(all_data['Actual'], 4)
+frame = absolute_error_data.groupby(["RoomType","Quartile"]).median().T
+error_by_review = frame.style.format('{:.2f}').background_gradient()
+error_by_review
+
+
+# In[304]:
+
+
+format_mapping = {'MAPE': '{:.3f}', 'MAE': '{:.2f}', 'MAD_ratio':'{:.3f}', 'r2_score':'{:.2%}', 'MSLE':'{:.3f}',
+                  'Median Absolute Error':'{:.2f}', 'MSE':'{:.0f}'}
+df_styled = df.copy()
+df_styled2 = df_styled.style.format(format_mapping).background_gradient()
+df_styled2
 
