@@ -27,8 +27,6 @@ All relevant figures are included here and some are also in main text, but the o
 
 ![Evaluation Metrics Table  for All 17 Models](Extra/MetricsTable.png)
 
-\clearpage
-
 ## 8.1 Median Absolute Error
 
 ![Median Absolute Error by 12-Quantile of Price for All 17 Models](Extra/Median Error by 12 Groups Price.png)
@@ -38,8 +36,6 @@ All relevant figures are included here and some are also in main text, but the o
 ![Median Absolute Error by Price Quartile and Room Type for All 17 Models](Extra/Median Error by Price Quartile and Room Type.png)
 
 ![Median Absolute Error by Room Type for All 17 Models](Extra/Median Error by Room Type.png)
-
-\clearpage
 
 ## 8.2 Feature Importance
 
@@ -55,8 +51,6 @@ All relevant figures are included here and some are also in main text, but the o
 
 ![Feature Importance for OLS (Sqrt Price)](Extra/Feature importance for OLS \(Sqrt\).png)
 
-\clearpage
-
 ![Feature Importance for kNN (Linear Price)](Extra/Feature importance for kNN \(Linear\).png)
 
 ![Feature Importance for kNN (Log Price)](Extra/Feature importance for kNN \(Log\).png)
@@ -70,8 +64,6 @@ All relevant figures are included here and some are also in main text, but the o
 ![Feature Importance for Random Forest (Log Price)](Extra/Feature importance for Random Forest \(Log\).png)
 
 ![Feature Importance for Random Forest (Sqrt Price)](Extra/Feature importance for Random Forest \(Exp\).png)
-
-\clearpage
 
 ## 8.3 Price Category Boxplots
 
@@ -89,8 +81,6 @@ u
 
 ![Price Category for k-Nearest Neighbors](Extra/Price Category for k-Nearest Neighbors.png)
 
-\clearpage
-
 ![Price Category for Support Vector Machine (Linear,Linear Kernel)](Extra/Price Category for Support Vector Machine \(Linear,Linear Kernel\).png)
 
 ![Price Category for Support Vector Machine (Linear,Gaussian Kernel)](Extra/Price Category for Support Vector Machine \(Linear,Gaussian Kernel\).png)
@@ -104,8 +94,6 @@ u
 ![Price Category for Random Forest (Log)](Extra/Price Category for Random Forest \(Log\).png)
 
 ![Price Category for Random Forest (Sqrt)](Extra/Price Category for Random Forest \(Sqrt\).png)
-
-\clearpage
 
 ## 8.4 Actual Price vs Residual Price
 
@@ -121,8 +109,6 @@ u
 
 ![Actual vs Residuals for k-Nearest Neigbors (Log)](Extra/Actual vs Residuals for k-Nearest Neigbors \(Log\)_diff.png)
 
-\clearpage
-
 ![Actual vs Residuals for Support Vector Machine (Linear,Gaussian Kernel)](Extra/Actual vs Residuals for Support Vector Machine \(Linear,Gaussian Kernel\)_diff.png)
 
 ![Actual vs Residuals for Support Vector Machine (Linear,Linear Kernel)](Extra/Actual vs Residuals for Support Vector Machine \(Linear,Linear Kernel\)_diff.png)
@@ -136,8 +122,6 @@ u
 ![Actual vs Residuals for Random Forest (Log)](Extra/Actual vs Residuals for Random Forest \(Log\)_diff.png)
 
 ![Actual vs Residuals for Random Forest (Sqrt)](Extra/Actual vs Residuals for Random Forest \(Sqrt\)_diff.png)
-
-\clearpage
 
 ## 8.5 Actual Price vs Predicted Price
 
