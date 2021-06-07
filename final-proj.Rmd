@@ -1,0 +1,124 @@
+---
+title: "final proj"
+author: "Yudong Wang"
+date: "5/13/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r}
+setwd("C:/Users/wyd98/Desktop/homework/STA 160")
+mydata = read.csv("Conditions_Contributing_to_COVID-19_Deaths__by_State_and_Age.csv")
+
+coviddata = mydata %>% 
+  filter(Condition == "COVID-19") %>% 
+  filter(Group == "By Total") %>% 
+  filter(State != "United States") %>% 
+  filter(State != "New York City") %>% 
+  filter(Age.Group != "All Ages") %>% 
+  filter(Age.Group != "Not stated")
+mydata = mydata %>% 
+  filter(Group != "By Total") %>% 
+  filter(Group != "By Year") %>% 
+  filter(State != "United States") %>% 
+  filter(State != "New York City") %>% 
+  filter(Age.Group != "All Ages") %>% 
+  filter(Age.Group != "Not stated")
+
+
+```
+
+
+```{r}
+# age group vs. death
+age = coviddata %>% 
+  group_by(Age.Group) %>% 
+  summarize(n = sum(COVID.19.Deaths, na.rm = TRUE)) %>% 
+  head(8)
+ggplot(age, aes(x = Age.Group, y = n)) + geom_bar(stat = "identity") + geom_hline(yintercept = mean(age$n), col = "red")
+```
+
+```{r}
+# 10 states with the most death cases
+state = coviddata %>% 
+  group_by(State) %>% 
+  summarize(n = sum(COVID.19.Deaths, na.rm = TRUE)) %>% 
+  arrange(desc(n)) %>% 
+  filter(State != "United States")
+state10 = state %>% 
+  head(10)
+# 10 states with the least death cases
+statelow10 = state %>% 
+  arrange(n) %>% 
+  head(10)
+# graph of most 10
+barplot(state10$n, names.arg = state10$State, las =2)
+abline(h = mean(state$n), col = "red")
+# graph of least 10 
+barplot(statelow10$n, names.arg = statelow10$State, ylim = c(0, 60000), las =2)
+abline(h = mean(state$n), col = "red")
+```
+
+```{r}
+# get 10 states from original data
+state10data = mydata %>% 
+  filter(State == state10$State) %>%
+  filter(Age.Group != "Not stated") %>% 
+  group_by(Age.Group, State) %>% 
+  summarize(n = sum(COVID.19.Deaths, na.rm = TRUE))
+# bar plot showing proportion of death number
+ggplot(state10data, aes(x = State, y = n)) + geom_bar(position = "fill", stat = "identity", aes(fill = Age.Group)) + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+
+```{r}
+# get monthly death in each state
+statetrend = mydata %>% 
+  filter(State == state10$State) %>% 
+  group_by(End.Date, State) %>% 
+  summarise(n = sum(COVID.19.Deaths, na.rm = TRUE)) %>% 
+  arrange(as.Date(End.Date, format = "%m/%d/%Y")) 
+month = rep(1:17, each = 10)
+trend = data.frame(statetrend, month) %>% 
+  group_by(State) %>% 
+  mutate(n = (n - mean(n))/sd(n))
+ggplot(trend, aes(month, n)) + geom_line(aes(col = State))
+```
+
+```{r}
+agetrend = mydata %>% 
+  group_by(Age.Group, End.Date) %>% 
+  summarise(n = sum(COVID.19.Deaths, na.rm = TRUE)) %>% 
+  arrange(as.Date(End.Date, format = "%m/%d/%Y")) 
+month = rep(1:17, each = 8)
+agetrend = data.frame(agetrend, month) %>% 
+  group_by(Age.Group) %>% 
+  mutate(n = (n - mean(n))/sd(n))
+ggplot(agetrend, aes(month, n)) + geom_line(aes(col = Age.Group))
+```
+
+
+```{r}
+# get monthly death caused by each condition 
+cond = mydata %>% 
+  group_by(End.Date, Condition.Group) %>% 
+  summarise(n = sum(COVID.19.Deaths, na.rm = TRUE)) %>% 
+  arrange(as.Date(End.Date, format = "%m/%d/%Y")) %>% 
+  head(-12)
+month = rep(1:16, each = 12)
+cond = data.frame(cond, month) %>% 
+  group_by(Condition.Group) %>% 
+  mutate(n = (n - mean(n))/sd(n))
+ggplot(cond, aes(month, n)) + geom_line(aes(col = Condition.Group)) + theme(legend.text = element_text(size = 5),
+        legend.title = element_text(size = 5))                                                                    
+```
+
