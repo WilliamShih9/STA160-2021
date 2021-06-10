@@ -1,0 +1,760 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
+import numpy as np
+import plotly
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+pop = pd.read_csv('https://www2.census.gov/programs-surveys/popest/tables/2010-2019/state/asrh/sc-est2019-agesex-civ.csv')
+pop = pop[pop.SEX == 0]
+pop = pop[['NAME','AGE','POPEST2019_CIV']]
+popkeep = pop
+pop.columns = ['NAME','AGE','Population']
+pop['AgeGroup'] = pd.cut(pop['AGE'], bins = [-1, 24, 34, 44, 54, 64, 74, 84, 85, 9999],
+       labels = ['0-24','25-34','35-44','45-54','55-64','65-74','75-84','85+','All Ages'])
+population = pop.groupby(['NAME','AgeGroup'])['Population'].sum().reset_index()
+
+Biggest = population[population.AgeGroup == 'All Ages'].sort_values('Population', ascending = False)['NAME']
+def get_biggest_states(number = 10):
+    number = number + 1
+    return Biggest[:number]
+
+center = pd.read_csv("https://www2.census.gov/geo/docs/reference/cenpop2010/CenPop2010_Mean_ST.txt")
+also = pd.read_csv("https://www2.census.gov/geo/docs/reference/cenpop2010/CenPop2010_Mean_US.txt")
+also['STNAME'] = 'United States'
+center = center.append(also)
+center = center[['STNAME','LATITUDE','LONGITUDE']]
+center
+
+df = pd.read_csv('Conditions_Contributing_to_COVID-19_Deaths__by_State_and_Age.csv')
+
+df.shape
+
+df.head()
+
+df.info()
+
+df.describe()
+
+def condition_to_group(condition):
+    condition = condition.replace(['Influenza and pneumonia','Chronic lower respiratory diseases','Adult respiratory distress syndrome',
+                       'Respiratory failure','Respiratory arrest','Other diseases of the respiratory system'],'Respiratory diseases')
+    condition = condition.replace(['Hypertensive diseases','Ischemic heart disease','Cardiac arrest','Cardiac arrhythmia',
+                                  'Heart failure','Cerebrovascular diseases','Other diseases of the circulatory system'],'Circulatory diseases')
+    return condition
+def condition_to_ICD10(condition):
+    codes = ['J09-J18','J40-J47','J80','J96','R09.2','J00-J06, J20-J39, J60-J70, J81-J86, J90-J95, J97-J99, U04',
+            'I10-I15','I20-I25','I46','I44, I45, I47-I49','I50','I60-I69',
+            'I00-I09, I26-I43, I51, I52, I70-I99','A40-A41','C00-C97','E10-E14','E65-E68','G30',
+             'F01, F03','N17-N19',
+             'S00-T98, V01-X59, X60-X84, X85-Y09, Y10-Y36, Y40-Y89, U01-U03',
+             'A00-A39, A42-B99, D00-E07, E15-E64, E70-E90, F00, F02, F04-G26, G31-H95, K00-K93, L00-M99, N00-N16, N20-N98, O00-O99, P00-P96, Q00-Q99, R00-R08, R09.0, R09.1, R09.3, R09.8, R10-R99',
+            'U071']
+    conditions = ['Influenza and pneumonia','Chronic lower respiratory diseases',
+                  'Adult respiratory distress syndrome','Respiratory failure','Respiratory arrest',
+                'Other diseases of the respiratory system','Hypertensive diseases','Ischemic heart disease',
+                'Cardiac arrest','Cardiac arrhythmia','Heart failure','Cerebrovascular diseases',
+                'Other diseases of the circulatory system','Sepsis','Malignant neoplasms','Diabetes',
+                  'Obesity','Alzheimer disease','Vascular and unspecified dementia',
+                  'Renal failure',
+                  'Intentional and unintentional injury, poisoning, and other adverse events',
+                  'All other conditions and causes (residual)','COVID-19']
+    condition = condition.replace(conditions, codes)
+    return condition
+
+df = df[(df.State != 'Puerto Rico') & (df.State != 'New York City')]
+filt = df[(df['Start Date'] != '05/01/2021') & (df['Group'] == 'By Month')]
+by_may1 = filt.groupby(['State','Age Group','Condition'])[['COVID-19 Deaths','Number of Mentions']].sum().reset_index()                                                
+by_may1['Condition Group'] = condition_to_group(by_may1['Condition'])
+by_may1 = by_may1.merge(population, how='left', left_on=['State','Age Group'], right_on=['NAME','AgeGroup'])
+by_may1 = by_may1.drop(['NAME','AgeGroup'], axis = 1)
+by_may1['Death Rate'] = by_may1['COVID-19 Deaths']/by_may1['Population']*100
+by_may1['Mention Rate'] = by_may1['Number of Mentions']/by_may1['Population']*100
+
+df = df.merge(population, how = 'left', left_on=['State','Age Group'], right_on = ['NAME','AgeGroup'])
+df = df.drop(['NAME','AgeGroup'], axis = 1)
+df['Death Rate'] = df['COVID-19 Deaths']/df['Population']*100
+df['Mention Rate'] = df['Number of Mentions']/df['Population']*100
+df = df[(df['Start Date'] != '05/01/2021')]
+df = df.drop(['Flag','Data As Of','Start Date','End Date','ICD10_codes'], axis = 1)
+df = df[(df['Age Group'] != 'Not stated')]
+
+number2 = pd.read_csv('Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
+number2 = number2.drop(['Footnote'], axis = 1)
+number2 = number2[(number2['Age Group'] != '0-17 years')]
+keep = df['Age Group'].unique()
+number2 = number2.replace(['Under 1 year','1-4 years','5-14 years','15-24 years'], '0-24')
+number2 = number2.replace(['25-34 years','35-44 years','45-54 years','55-64 years','65-74 years','75-84 years','85 years and over'],
+               ['25-34','35-44','45-54','55-64','65-74','75-84','85+'])
+number2 = number2[(number2['Age Group'].isin(keep))]
+number2 = number2.groupby(['Data As Of','Start Date','End Date','Group','Year','Month','State','Sex','Age Group'], dropna = False).sum().reset_index()
+number2 = number2[(number2['Start Date'] != '05/01/2021')]
+number2 = number2.drop(['Data As Of','Start Date','End Date'], axis = 1)
+number2 = number2[(number2['Sex'] == 'All Sexes')].drop(['Sex'], axis = 1)
+
+states = df['State'].unique()
+states = np.delete(states, 0)
+statematrix = pd.DataFrame({'State':[], 'Age':[], 'Death Rate':[]})
+for state in states:
+    s = state.replace(' ','-')
+    url = 'https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/NVSR/70-01/'+s+'-1-Total.xlsx'
+    print(url)
+    A = pd.read_excel(url, skiprows = 2)
+    A['Age'] = A.index
+    A['Death Rate'] = A['qx']
+    A['State'] = state
+    statematrix = statematrix.append(A[['State','Age','Death Rate']])
+
+url = 'https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/NVSR/69-12/Table01.xlsx'
+A = pd.read_excel(url, skiprows = 2)
+A['Age'] = A.index
+A['Death Rate'] = A['qx']
+A['State'] = 'United States'
+statematrix = statematrix.append(A[['State','Age','Death Rate']])
+
+popkeep2 = popkeep.merge(statematrix, how = 'left', left_on = ['NAME','AGE'], right_on = ['State','Age'])
+popkeep2 = popkeep2.drop(['State','Age'], axis = 1)
+popkeep2['Deaths'] = popkeep2['Death Rate'] * popkeep2['Population']
+AverageAge = popkeep2.groupby(['NAME','AgeGroup']).apply(lambda x: (x['Deaths']*x['AGE']).sum()/x['Deaths'].sum()).reset_index()
+AverageAgeA = popkeep2.groupby(['NAME','AgeGroup']).apply(lambda x: (x['Population']*x['AGE']).sum()/x['Population'].sum()).reset_index()
+Drate = popkeep2.groupby(['NAME','AgeGroup']).apply(lambda x: (x['Death Rate']).mean()).reset_index()
+Drate.columns = ['State','Age Group','Tables Death Rate']
+AverageAge.columns = ['State','Age Group','Average Age of Death']
+AverageAgeA.columns = ['State','Age Group','Average Age']
+
+base_url_cdd = 'https://ftp.cpc.ncep.noaa.gov/htdocs/products/analysis_monitoring/cdus/degree_days/archives/Cooling%20Degree%20Days/monthly%20cooling%20degree%20days%20state/'
+base_url_hdd =  'https://ftp.cpc.ncep.noaa.gov/htdocs/products/analysis_monitoring/cdus/degree_days/archives/Heating%20degree%20Days/monthly%20states/'
+month_list = ['2020/Jan 2020','2020/Feb 2020','2020/Mar 2020','2020/Apr 2020',
+              '2020/May 2020','2020/Jun 2020','2020/Jul 2020','2020/Aug 2020',
+              '2020/Sep 2020','2020/Oct 2020','2020/Nov 2020','2020/Dec 2020','2021/Jan 2021',
+              '2021/Feb 2021','2021/Mar 2021','2021/Apr 2021']
+
+month_list = [s.replace(' ','%20') for s in month_list]
+degreematrix = pd.DataFrame({'State':[],'Month?':[],'CDD':[],'HDD':[]})
+for month in month_list:
+    url = base_url_cdd + month + ".txt"
+    url2 = base_url_hdd + month + ".txt"
+    print(url, url2)
+    A = pd.read_fwf(url, widths = [17,6,5,8,6,6,6,6,6])
+    A = A[14:]
+    A['Month?'] = month
+    A['State'] = A['Unnamed: 0']
+    A['CDD'] = A['Unnamed: 1'] 
+    B = pd.read_fwf(url2, widths = [17,6,5,8,6,6,6,6,6])
+    B = B[14:]
+    A['HDD'] = B['Unnamed: 1']
+    degreematrix = degreematrix.append(A[['State','Month?','CDD','HDD']])
+
+Z = degreematrix['Month?'].str.split('/|%', expand = True).drop(2, axis = 1)
+degreematrix['Year'] = Z[0]
+degreematrix['Month'] = Z[1]
+degreematrix = degreematrix.replace(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], [1,2,3,4,5,6,7,8,9,10,11,12])
+degreematrix['State'] = degreematrix['State'].str.title()
+degreematrix = degreematrix.replace(['Distrct Columbia'], ['District of Columbia'])
+degreematrix = degreematrix.drop('Month?', axis = 1)
+degreematrix['Month'] = degreematrix['Month'] + 0.00
+degreematrix['Year'] = degreematrix['Year'].astype(float) 
+
+def get_percent_of_deathsage(frame, inde = ['State','Year','Month','Condition'], col = 'Age Group', val = 'COVID-19 Deaths'):
+    piv = frame.pivot(index = inde, columns = col, values = val)
+    pov = piv.copy()
+    keep = piv.columns
+    for col in keep:
+        pov[col] = piv[col]/piv['All Ages']
+    return pd.melt(pov.reset_index(), value_vars=keep, id_vars=inde)
+# Gets percent of deaths with certain condition. Note that if 0 COVID-19 deaths, then a NaN results since divide by 0 error
+def get_percent_of_deaths(frame, inde = ['State','Year','Month','Age Group'], col = 'Condition', val = 'Death Rate'):
+    piv = frame.pivot(index = inde, columns = col, values = val)
+    pov = piv.copy()
+    keep = piv.columns
+    for col in keep:
+        pov[col] = piv[col]/piv['COVID-19']
+    return pd.melt(pov.reset_index(), value_vars=keep, id_vars=inde)
+# Converts the Year/Month into a single Year/Month using ISO format
+def yearmonth(frame):
+    frame['Year/Month'] = frame['Year'].astype(int).astype(str) + "/" + frame['Month'].astype(int).astype(str).str.zfill(2)
+    return frame
+# Cutyearmonth cuts by month: Note that 1 is 2020/1, 12 is 2020/12, and 16 is 2021/4
+# This function allows grouping months. 
+def cutyearmonth(frame, cuts = [0,9,17], names = ['First','Second']):
+    frame['Peak'] = (frame['Year'].astype(int)-2020)*12 + frame['Month'].astype(int)
+    frame['Peak'] = pd.cut(frame['Peak'], bins = cuts, labels = names)
+    return frame
+explore = df.query('Group == "By Month"')
+explore = yearmonth(explore)
+explore = cutyearmonth(explore)
+explore = explore.merge(center, how='left', left_on=['State'], right_on=['STNAME'])
+explore = explore.drop(['STNAME'], axis = 1)
+
+import seaborn as sns
+import matplotlib.dates
+
+temp = explore.groupby(['Year/Month','State','Condition','Age Group'])[['Death Rate','Mention Rate']].sum().reset_index()
+temp = temp.merge(center, how='left', left_on=['State'], right_on=['STNAME']).drop(['STNAME'], axis = 1)
+allages = temp[(temp.Condition == 'COVID-19') & (temp['Age Group'] == 'All Ages')]
+allages = allages[allages.State.isin(get_biggest_states(9))]
+fig, ax = plt.subplots(figsize = (10,6))
+allages['Date'] = matplotlib.dates.datestr2num(allages['Year/Month'])
+ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%Y-%m'))
+fmt_year = matplotlib.dates.MonthLocator(interval=2)
+ax.xaxis.set_major_locator(fmt_year)
+fmt_month = matplotlib.dates.MonthLocator()
+ax.xaxis.set_minor_locator(fmt_month)
+ax.set_title("COVID Death Rates (per 100) by Month for Top 9 Populated States plus USA")
+plt.grid()
+plot = sns.lineplot(data=allages, x="Date",y="Death Rate",hue="State",ax=ax)
+plt.savefig("DeathRateTop10.png", dpi = 300)
+
+temp2 = explore.groupby(['Peak','State','Condition','Age Group'])[['Death Rate','Mention Rate']].sum().reset_index()
+temp2.merge(center, how='left', left_on=['State'], right_on=['STNAME']).drop(['STNAME'], axis = 1)
+period = temp2[(temp2.Condition == 'COVID-19') & (temp2['Age Group'] == 'All Ages')]
+period = period.pivot(index = 'State', columns = 'Peak', values = 'Death Rate')
+fig, ax = plt.subplots(figsize = (10,6))
+plot = sns.regplot(data=period, x="First",y="Second", ax=ax, ci = None)
+ax.set_xlabel("First Wave (Through August 2020)")
+ax.set_ylabel("Second Wave (September 2020-April 2021)")
+plt.grid()
+ax.set_title("Death Rate per 100 by State for First Wave and Second Wave")
+plt.savefig("FirstSecondWave.png", dpi = 300)
+
+totald = df.query('Group == "By Total"')
+totald = get_percent_of_deaths(totald)
+totald['value'] = totald['value']*100
+temp2 = totald[(totald['Age Group'] == 'All Ages') & (totald['State'] == 'United States') & (totald['Condition'] != 'COVID-19')]
+fig, ax = plt.subplots(figsize = (10,6))
+sns.barplot(data=temp2, y="Condition",x="value",ax=ax)
+plt.grid(axis='x')
+ax.set_xlabel('Percent')
+ax.set_title('Percent of COVID-19 Deaths Involving Conditions')
+plt.savefig('PercentConditions.png', dpi = 300)
+
+totald = df.query('Group == "By Total"')
+totald = get_percent_of_deaths(totald)
+totald['value'] = totald['value']*100
+temp2 = totald[(totald['Age Group'] == '25-34') & (totald['State'] == 'United States') & (totald['Condition'] != 'COVID-19')]
+fig, ax = plt.subplots(figsize = (10,6))
+sns.barplot(data=temp2, y="Condition",x="value",ax=ax)
+plt.grid(axis='x')
+ax.set_xlabel('Percent')
+ax.set_title('Percent of COVID-19 Deaths Involving Conditions for 25-34')
+plt.savefig('PercentConditions25-34.png', dpi = 300)
+
+totald = df.query('Group == "By Total"')
+totald = get_percent_of_deaths(totald)
+totald['value'] = totald['value']*100
+temp2 = totald[(totald['Age Group'] == '85+') & (totald['State'] == 'United States') & (totald['Condition'] != 'COVID-19')]
+fig, ax = plt.subplots(figsize = (10,6))
+sns.barplot(data=temp2, y="Condition",x="value",ax=ax)
+plt.grid(axis='x')
+ax.set_xlabel('Percent')
+ax.set_title('Percent of COVID-19 Deaths Involving Conditions for 25-34')
+plt.savefig('PercentConditions85+.png', dpi = 300)
+
+totald = df.query('Group == "By Month"')
+totald = totald.query('State == "United States"')
+totald = get_percent_of_deaths(totald)
+totald = totald[(totald['Age Group'] == 'All Ages')]
+totald = totald[(totald['Condition'] == 'Influenza and Pnemonia') | (totald['Condition'] == 'Respiratory failure') |
+                (totald['Condition'] == 'All other conditions and causes (residual)') | (totald['Condition'] == 'Hypertensive diseases') |
+                (totald['Condition'] == 'Diabetes') | (totald['Condition'] == 'Ischemic heart disease') | (totald['Condition'] == 'Cardiac arrest')]
+totald = yearmonth(totald)
+totald['value'] = totald['value']*100
+fig, ax = plt.subplots(figsize = (10,6))
+totald['Date'] = matplotlib.dates.datestr2num(totald['Year/Month'])
+ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%Y-%m'))
+fmt_year = matplotlib.dates.MonthLocator(interval=2)
+ax.xaxis.set_major_locator(fmt_year)
+fmt_month = matplotlib.dates.MonthLocator()
+ax.xaxis.set_minor_locator(fmt_month)
+ax.set_title("Percent of Deaths Involving Top 6 Conditions by Month (1/2020-4/2021)")
+plt.grid()
+plot = sns.lineplot(data=totald, x="Date",y="value",hue="Condition",ax=ax)
+ax.set_ylabel('Percent')
+plt.savefig("ConditionsByMonth.png", dpi = 300)
+
+totald = df.query('Group == "By Month"')
+totald = totald.query('State == "United States"')
+totald = get_percent_of_deathsage(totald)
+totald = totald[(totald['Condition'] == 'COVID-19') & (totald['Age Group'] != 'All Ages')]
+totald = yearmonth(totald)
+totald['value'] = totald['value']*100
+fig, ax = plt.subplots(figsize = (10,6))
+totald['Date'] = matplotlib.dates.datestr2num(totald['Year/Month'])
+ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%Y-%m'))
+fmt_year = matplotlib.dates.MonthLocator(interval=2)
+ax.xaxis.set_major_locator(fmt_year)
+fmt_month = matplotlib.dates.MonthLocator()
+ax.xaxis.set_minor_locator(fmt_month)
+ax.set_title("Percent of Deaths by Age Group by Month (1/2020-4/2021)")
+plt.grid()
+plot = sns.lineplot(data=totald, x="Date",y="value",hue="Age Group",ax=ax)
+ax.legend(loc = "upper left")
+ax.set_ylabel('Percent')
+plt.savefig("AgeGroupByMonth.png", dpi = 300)
+
+df_new = df.drop(['Death Rate','Mention Rate','Number of Mentions','Condition Group','Population'], axis = 1)
+df_new = df_new.pivot(index = ['Group','Year','Month','State','Age Group'], columns = 'Condition', values = 'COVID-19 Deaths').reset_index()
+df_new = df_new.merge(number2, how = 'left', left_on = ['Group','Year','Month','State', 'Age Group'], right_on = ['Group','Year','Month','State','Age Group'])
+df_new = df_new.drop(['COVID-19'], axis = 1)
+df_new = df_new.merge(Drate, how = 'left', left_on = ['State','Age Group'], right_on = ['State','Age Group'])
+df_new = df_new.merge(AverageAge, how = 'left', left_on = ['State','Age Group'], right_on = ['State','Age Group'])
+df_new = df_new.merge(AverageAgeA, how = 'left', left_on = ['State','Age Group'], right_on = ['State','Age Group'])
+df_new = df_new.merge(degreematrix, how = 'left', left_on = ['State','Year','Month'], right_on = ['State','Year','Month'])
+df_new = df_new.merge(population, how='left', left_on=['State','Age Group'], right_on=['NAME','AgeGroup'])
+df_new = df_new.merge(center, how='left', left_on=['State'], right_on=['STNAME'])
+df_new = df_new.drop(['NAME','STNAME','AgeGroup'], axis = 1)
+
+df_cut = cutyearmonth(df_new[(df_new['Group'] == 'By Month')])
+df_cut[(df_cut['Age Group'] == '0-24') & (df_cut['State'] == 'Alabama')]
+df_cut = df_cut.replace(np.nan, 0)
+df_cut['CDD'] = df_cut['CDD'].astype(int)
+df_cut['HDD'] = df_cut['HDD'].astype(int)
+temp = df_cut.groupby(['State','Age Group', 'Peak']).sum().reset_index()
+temp = temp.drop(['Year','Month'], axis = 1)
+peak_one = temp[(temp['Peak'] == 'First') & (temp['Age Group'] != 'All Ages')]
+OriginalPeakOne = peak_one
+peak_one.to_csv('OriginalPeakOne.csv')
+peak_one = peak_one.drop(['State','Age Group','Peak'], axis = 1)
+peak_two = temp[(temp['Peak'] == 'Second') & (temp['Age Group'] != 'All Ages')]
+OriginalPeakTwo = peak_two
+peak_two.to_csv('OriginalPeakTwo.csv')
+peak_two = peak_two.drop(['State','Age Group','Peak'], axis = 1)
+death_one = peak_one['Total Deaths'].copy()
+death_two = peak_two['Total Deaths'].copy()
+for i in range(28):
+    peak_one[peak_one.columns[i]] = peak_one[peak_one.columns[i]]/death_one
+    peak_two[peak_two.columns[i]] = peak_two[peak_two.columns[i]]/death_two
+for i in range(28,34):
+    peak_one[peak_one.columns[i]] = peak_one[peak_one.columns[i]]/9
+    peak_two[peak_two.columns[i]] = peak_two[peak_two.columns[i]]/7
+peak_one = peak_one.drop(['Population','Total Deaths'], axis = 1)
+peak_two = peak_two.drop(['Population','Total Deaths'], axis = 1)
+
+from sklearn.preprocessing import StandardScaler
+
+peak_one = peak_one.fillna(0)
+peak_two = peak_two.fillna(0)
+transform_one = StandardScaler().fit_transform(peak_one)
+transform_two = StandardScaler().fit_transform(peak_two)
+
+PeakOneNoPCAScale = peak_one
+PeakTwoNoPCAScale = peak_two
+peak_one.to_csv('PeakOneNo-PCA-Scale.csv')
+peak_two.to_csv('PeakTwoNo-PCA-Scale.csv')
+
+from pca import pca
+
+pca1 = pca()
+result_one = pca1.fit_transform(transform_one)
+result_one['explained_var']
+
+round(result_one['loadings'],3)
+
+pca1.plot()
+
+pca1.scatter()
+
+pca1.biplot(n_feat=10)
+
+pca_transform_one = pca1.transform(transform_one)
+pca_transform_one
+
+pca2 = pca()
+result_two = pca2.fit_transform(transform_two)
+result_two['explained_var']
+
+round(result_two['loadings'], 3)
+
+pca2.plot()
+plt.savefig('CumulativeVar (Second Wave).png', dpi = 300)
+
+pca2.scatter()
+
+pca2.biplot()
+
+pca_transform_two = pca2.transform(transform_two)
+pca_transform_two
+
+final_one = pca_transform_one.iloc[:,:13]
+final_two = pca_transform_two.iloc[:,:13]
+
+final_one.to_csv('PeakOnePCA-Top13.csv')
+final_two.to_csv('PeakTwoPCA-Top13.csv')
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
+import numpy as np
+import plotly
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import seaborn as sns
+
+peak_one_pca = final_one
+peak_two_pca = final_two
+
+peak_one_pca.head()
+
+peak_two_pca.head()
+
+peak_one_data = peak_one_pca.values
+peak_two_data = peak_two_pca.values
+
+from sklearn.cluster import KMeans
+
+def elbow_method(data_cl, title, pngname):
+    # determine the number of clustersu
+    #The Elbow method looks at how the total WSS(within cluster sum of squares) varies with the number of clusters.
+    wcss = []
+    for i in range(1,16):
+        km = KMeans(n_clusters=i,init='k-means++', max_iter=300, n_init=10, random_state=0)
+        km.fit(data_cl)
+        wcss.append(km.inertia_)
+    plt.plot(range(1,16),wcss, c="#c51b7d", marker = 'o')
+    plt.gca().spines["top"].set_visible(False)
+    plt.gca().spines["right"].set_visible(False)
+    plt.title(title, size=15)
+    plt.xlabel('Number of clusters', size=15)
+    plt.grid(axis='y')
+    plt.ylabel('wcss', size=15)
+    plt.savefig(pngname, dpi = 300)
+    plt.show()
+
+def train_KMeans(num_clusters, data_cl, title, pngname):
+    # number of clusters
+    km = KMeans(n_clusters=num_clusters)
+    km.fit(data_cl)
+
+    labels = km.predict(data_cl)
+    #print(clusters)
+    plt.scatter(data_cl[:, 0], data_cl[:, 1], c=labels,
+            s=50, cmap='viridis')
+    plt.xlabel("PCA 1")
+    plt.ylabel("PCA 2")
+    plt.title(title)
+    plt.grid()
+    plt.savefig(pngname, dpi = 300)
+    return km, labels
+
+# Peak One 
+elbow_method(peak_one_data,"Elbow for K-Means (First Wave)", "ElbowOne.png")
+# optimal = 4
+
+elbow_method(peak_two_data,"Elbow for K-Means (Second Wave)","ElbowTwo.png")
+# optimal = 4
+
+opt1 = 4
+opt2 = 4
+
+# peak one kmeans clustering
+km_one, labels_one = train_KMeans(opt1, peak_one_data, "K-Means Clustering (First Wave)","KmeansOne.png")
+# 3 clusters seem to be overlapping, one cluster deviates from other clusters but with few data points 
+
+# peak two kmeans clustering
+km_two, labels_two = train_KMeans(opt2, peak_two_data, "K-Means Clustering (Second Wave)", "KmeansTwo.png")
+# peak two clusters are more distributed evenly
+
+#sihouette scores for KMeans
+from sklearn.metrics import silhouette_score
+def calculate_silhouette_score(X, km):
+    score = silhouette_score(X, km.labels_, metric='euclidean')
+    print('Silhouetter Score: %.3f' % score)
+
+# get centroids and corresponding index in the original dataset 
+def group_data_clusters(data, centroids):
+    cluster_dict = {}
+    for i in range(len(centroids)):
+        lab = centroids[i]
+        if lab not in cluster_dict: 
+            cluster_dict[lab] = []
+        tmp = cluster_dict[lab]
+        tmp.append(data[i])
+        cluster_dict[lab] = tmp 
+    return cluster_dict
+
+df_one = OriginalPeakOne
+
+df_two = OriginalPeakTwo
+
+df_cond_one = PeakOneNoPCAScale
+df_cond_two = PeakTwoNoPCAScale
+
+general_cols = ['State', 'Age Group', 'Tables Death Rate', 'Population']
+cond_cols = ['Adult respiratory distress syndrome',
+       'All other conditions and causes (residual)', 'Alzheimer disease',
+       'Cardiac arrest', 'Cardiac arrhythmia', 'Cerebrovascular diseases',
+       'Chronic lower respiratory diseases', 'Diabetes', 'Heart failure',
+       'Hypertensive diseases', 'Influenza and pneumonia',
+       'Intentional and unintentional injury, poisoning, and other adverse events',
+       'Ischemic heart disease', 'Malignant neoplasms', 'Obesity',
+       'Other diseases of the circulatory system',
+       'Other diseases of the respiratory system', 'Renal failure',
+       'Respiratory arrest', 'Respiratory failure', 'Sepsis',
+       'Vascular and unspecified dementia', 'COVID-19 Deaths',
+       'Pneumonia Deaths', 'Pneumonia and COVID-19 Deaths', 'Influenza Deaths',
+       'Pneumonia, Influenza, or COVID-19 Deaths']
+
+df_one_general = df_one[general_cols]
+df_one_condition_death = df_cond_one[cond_cols]
+
+df_two_general = df_two[general_cols]
+df_two_condition_death = df_cond_two[cond_cols]
+
+data_one_general = df_one_general.values
+data_two_general = df_two_general.values
+
+data_one_cond = df_one_condition_death.values
+data_two_cond = df_two_condition_death.values
+
+cluster_dict_one_general = group_data_clusters(data_one_general , labels_one)
+cluster_dict_one_cond = group_data_clusters(data_one_cond  , labels_one)
+
+cluster_dict_two_general = group_data_clusters(data_two_general , labels_two)
+cluster_dict_two_cond = group_data_clusters(data_two_cond  , labels_two)
+
+def array_to_list(cluster_dict, i):
+    cluster_data = [l.tolist() for l in cluster_dict[i]]
+    return cluster_data
+
+def get_different_clusters_data(cluster_dict,num_lst):
+    cluster_lst_dict = {}
+    for num in num_lst: 
+        data_cl = array_to_list(cluster_dict, num)
+        cluster_lst_dict[num] = data_cl
+    return cluster_lst_dict
+
+# get original data and normalized death conditions based on different clusters in Peak One
+general_one_clusters_dict = get_different_clusters_data(cluster_dict_one_general,[0, 1, 2, 3])
+cond_one_clusters_dict = get_different_clusters_data(cluster_dict_one_cond,[0, 1, 2, 3])
+
+# get original data and normalized death conditions based on different clusters in Peak Two
+general_two_clusters_dict = get_different_clusters_data(cluster_dict_two_general,[0, 1, 2, 3])
+cond_two_clusters_dict = get_different_clusters_data(cluster_dict_two_cond,[0, 1, 2, 3])
+
+df_gen1_cl1 = pd.DataFrame(general_one_clusters_dict[0], columns = general_cols)
+df_gen1_cl2 = pd.DataFrame(general_one_clusters_dict[1], columns = general_cols)
+df_gen1_cl3 = pd.DataFrame(general_one_clusters_dict[2], columns = general_cols)
+df_gen1_cl4 = pd.DataFrame(general_one_clusters_dict[3], columns = general_cols)
+
+df_cond_cl1 = pd.DataFrame(cond_one_clusters_dict[0], columns = cond_cols)
+df_cond_cl2 = pd.DataFrame(cond_one_clusters_dict[1], columns = cond_cols)
+df_cond_cl3 = pd.DataFrame(cond_one_clusters_dict[2], columns = cond_cols)
+df_cond_cl4 = pd.DataFrame(cond_one_clusters_dict[3], columns = cond_cols)
+
+def plot_top_groups(df, top_n, x_name, title):
+    f1 = sns.catplot(x= x_name, kind="count", palette="ch:.25", data=df[[x_name]], order = df[x_name].value_counts()[:top_n].index)
+    f1.set_xticklabels(rotation=40)
+    plt.title(title)
+    plt.savefig(title +".png", dpi = 300)
+    
+def plot_all_clusters_group(df_lst, top_n, x_name, typ):
+    # fig, ax = plt.subplots(2,2, figsize=(12,10))
+    title = "Top " + str(top_n) + " " + x_name + "s for " 
+    typ = " (" + typ + ")"
+    plot_top_groups(df_lst[0], top_n, x_name, title + "Cluster One" + typ)
+    plot_top_groups(df_lst[1], top_n, x_name, title + "Cluster Two" + typ)
+    plot_top_groups(df_lst[2], top_n, x_name, title + "Cluster Three" + typ)
+    plot_top_groups(df_lst[3], top_n, x_name, title + "Cluster Four" + typ)
+
+def violin_plot(col_name1, col_name2, data, title):
+    ax = sns.violinplot(x=col_name1, y=col_name2, data = data)
+    plt.title(title)
+    plt.savefig(title + ".png", dpi = 300)
+    plt.show()
+    
+def plot_death_rate_by_group(lst_df, col_name1, col_name2, title):
+    # fig = plt.figure()
+    violin_plot(col_name1,col_name2, lst_df[0], title + " (Cluster One)")
+    violin_plot(col_name1,col_name2, lst_df[1], title + " (Cluster Two)")
+    violin_plot(col_name1,col_name2, lst_df[2], title + " (Cluster Three)")
+    violin_plot(col_name1,col_name2, lst_df[3], title + " (Cluster Four)")
+
+def get_top_death_rate_cond(df_cond_cl, top_n):
+    # select top n columns based on average death rate for each column
+    df1 = df_cond_cl.describe()
+    df_t = df1.T
+    df_top = df_t.nlargest(top_n, 'mean')
+    df_res = df_top.T
+    cols = [col for col in df_res.columns]
+    df_final = df_cond_cl[cols]
+    return df_final 
+
+def hist_top_cond(df, title): 
+    for col in df.columns:
+        hist = df[col].hist(bins=10)
+        print("Plotting for column {}".format(col))
+        plt.title(title + " " + col)
+        plt.savefig(title + " " + col + ".png", dpi = 300)
+        plt.show()
+        
+def plot_death_rate_cond(lst_df, top_n, title):
+    print("Cluster1:")
+    top_data1 = get_top_death_rate_cond(lst_df[0], top_n)
+    hist_top_cond(top_data1, title + " (Cluster 1)")
+    print("Cluster2:")
+    top_data2 = get_top_death_rate_cond(lst_df[1], top_n)
+    hist_top_cond(top_data2, title + " (Cluster 2)")
+    print("Cluster3:")
+    top_data3 = get_top_death_rate_cond(lst_df[2], top_n)
+    hist_top_cond(top_data3, title + " (Cluster 3)")
+    print("Cluster4:")
+    top_data4 = get_top_death_rate_cond(lst_df[3], top_n)
+    hist_top_cond(top_data4, title + " (Cluster 4)")
+
+x_name0 = "State"
+df__gen1_cl_lst = [df_gen1_cl1,df_gen1_cl2, df_gen1_cl3, df_gen1_cl4 ]
+
+# death rate by age groups
+plot_death_rate_by_group(df__gen1_cl_lst, "Age Group", 'Tables Death Rate', "First Wave")
+
+df_gen1_cl1
+
+df_cond_cl_lst = [df_cond_cl1, df_cond_cl2, df_cond_cl3, df_cond_cl4]
+
+df_cond_cl1.columns
+
+# death condition with top 3 highest death rate in each cluster 
+plot_death_rate_cond(df_cond_cl_lst, 3, "Histogram for First Wave")
+
+# plot top 3 state groups
+plot_all_clusters_group(df__gen1_cl_lst, 6, x_name0, "First Wave")
+
+# plot top age group
+x_name1 = "Age Group"
+df__gen1_cl_lst = [df_gen1_cl1,df_gen1_cl2, df_gen1_cl3, df_gen1_cl4 ]
+plot_all_clusters_group(df__gen1_cl_lst, 7, x_name1, "First Wave")
+
+df_gen2_cl1 = pd.DataFrame(general_two_clusters_dict[0], columns = general_cols)
+df_gen2_cl2 = pd.DataFrame(general_two_clusters_dict[1], columns = general_cols)
+df_gen2_cl3 = pd.DataFrame(general_two_clusters_dict[2], columns = general_cols)
+df_gen2_cl4 = pd.DataFrame(general_two_clusters_dict[3], columns = general_cols)
+
+df_cond2_cl1 = pd.DataFrame(cond_two_clusters_dict[0], columns = cond_cols)
+df_cond2_cl2 = pd.DataFrame(cond_two_clusters_dict[1], columns = cond_cols)
+df_cond2_cl3 = pd.DataFrame(cond_two_clusters_dict[2], columns = cond_cols)
+df_cond2_cl4 = pd.DataFrame(cond_two_clusters_dict[3], columns = cond_cols)
+
+df__gen2_cl_lst = [df_gen2_cl1,df_gen2_cl2, df_gen2_cl3, df_gen2_cl4 ]
+
+# death rate by age groups
+plot_death_rate_by_group(df__gen2_cl_lst, "Age Group", 'Tables Death Rate', "Second Wave")
+
+df_cond2_cl_lst = [df_cond2_cl1, df_cond2_cl2, df_cond2_cl3, df_cond2_cl4]
+
+# death condition with top 3 highest death rate in each cluster 
+plot_death_rate_cond(df_cond2_cl_lst, 3, "Histogram for Second Wave")
+
+# plot top 3 states 
+plot_all_clusters_group(df__gen2_cl_lst, 6, x_name0, "Second Wave")
+
+# plot top age group
+plot_all_clusters_group(df__gen2_cl_lst, 7, x_name1, "Second Wave")
+
+OriginalPeakOne['Cluster'] = labels_one + 1
+OriginalPeakTwo['Cluster'] = labels_two + 1
+OriginalPeakOne['Cluster'] = OriginalPeakOne['Cluster'].astype(str)
+OriginalPeakTwo['Cluster'] = OriginalPeakTwo['Cluster'].astype(str)
+
+OriginalPeakOne[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']] = PeakOneNoPCAScale[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']]
+OriginalPeakTwo[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']] = PeakTwoNoPCAScale[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']]
+OriginalPeakOne[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']] = OriginalPeakOne[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']]/9
+OriginalPeakTwo[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']]= OriginalPeakTwo[['Tables Death Rate', 'Average Age of Death', 'Average Age', 'LATITUDE',
+       'LONGITUDE']]/7
+
+def plot_two_by_group(fix, axis1, axis2, title, filt, filtval):
+    if filt != None:
+        fix = fix[(fix[filt] == filtval)]
+    sns.scatterplot(data = fix, x=axis1, y=axis2, hue="Cluster", hue_order = ['1','2','3','4'])
+    if filt != None:
+        title = title + " by " + filt + " (" + filtval + ")"
+    plt.title(title)
+    plt.savefig(title + ".png", dpi = 300)
+    plt.clf()
+
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "0-24")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "25-34")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "35-44")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "45-54")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "55-64")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "65-74")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "75-84")
+plot_two_by_group(OriginalPeakOne, "LONGITUDE", "LATITUDE", "K-Means for First Wave by State", "Age Group", "85+")
+
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "0-24")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "25-34")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "35-44")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "45-54")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "55-64")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "65-74")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "75-84")
+plot_two_by_group(OriginalPeakTwo, "LONGITUDE", "LATITUDE", "K-Means for Second Wave by State", "Age Group", "85+")
+
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "0-24")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "25-34")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "35-44")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "45-54")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "55-64")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "65-74")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "75-84")
+plot_two_by_group(OriginalPeakOne, "CDD", "HDD", "K-Means for First Wave by CDD,HDD", "Age Group", "85+")
+
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "0-24")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "25-34")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "35-44")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "45-54")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "55-64")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "65-74")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "75-84")
+plot_two_by_group(OriginalPeakTwo, "CDD", "HDD", "K-Means for Second Wave by CDD,HDD", "Age Group", "85+")
+
+PeakOneNoPCAScale['Cluster'] = OriginalPeakOne['Cluster']
+PeakTwoNoPCAScale['Cluster'] = OriginalPeakTwo['Cluster']
+
+plot_two_by_group(PeakOneNoPCAScale,"COVID-19 Deaths","Tables Death Rate","K-Means for First Wave by COVID-19 Deaths (Ratio over Total Deaths) vs Overall Death Rate",None,None)
+plot_two_by_group(PeakTwoNoPCAScale,"COVID-19 Deaths","Tables Death Rate","K-Means for Second Wave by COVID-19 Deaths (Ratio over Total Deaths) vs Overall Death Rate",None,None)
+
+plot_two_by_group(PeakOneNoPCAScale,"HDD", "COVID-19 Deaths","K-Means for First Wave by HDD vs COVID-19 Deaths (Ratio over Total Deaths)",None,None)
+plot_two_by_group(PeakTwoNoPCAScale,"HDD", "COVID-19 Deaths","K-Means for Second Wave by HDD vs COVID-19 Deaths (Ratio over Total Deaths)",None,None)
+
+PeakOneNoPCAScale
+
+PeakOneNoPCAScale['Pneumonia/Influenza Only'] = PeakOneNoPCAScale['Pneumonia, Influenza, or COVID-19 Deaths'] - PeakOneNoPCAScale['COVID-19 Deaths']
+PeakTwoNoPCAScale['Pneumonia/Influenza Only'] = PeakTwoNoPCAScale['Pneumonia, Influenza, or COVID-19 Deaths'] - PeakTwoNoPCAScale['COVID-19 Deaths']
+
+plot_two_by_group(PeakOneNoPCAScale,"Pneumonia/Influenza Only", "COVID-19 Deaths","K-Means for First Wave by Pneumonia,Influenza vs COVID-19 Deaths (Ratio over Total Deaths)",None,None)
+plot_two_by_group(PeakTwoNoPCAScale,"Pneumonia/Influenza Only", "COVID-19 Deaths","K-Means for Second Wave by Pneumonia,Influenza vs COVID-19 Deaths (Ratio over Total Deaths)",None,None)
+
+PeakOneNoPCAScale
+
+plot_two_by_group(PeakOneNoPCAScale,"Obesity", "Respiratory failure","K-Means for First Wave by Obesity vs Respiratory failure (Ratio over Total Deaths)",None,None)
+plot_two_by_group(PeakTwoNoPCAScale,"Obesity", "Respiratory failure","K-Means for Second Wave by Obesity vs Respiratory failure (Ratio over Total Deaths)",None,None)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
